@@ -4,6 +4,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from django.shortcuts import get_object_or_404
 from .models import (
     Product, ProductComment,
 )
@@ -49,6 +50,22 @@ class ProductViewSet(ViewSet):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def update_product(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+
+        product = Product.objects.filter(id=pk, is_available=True).first()
+        if product is None:
+            return Response("Product not found", status=status.HTTP_404_NOT_FOUND)
+
+        partial = request.method == 'PATCH'
+
+        serializer = ProductSerializer(product, data=request.data, partial=partial)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def related_products(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
 
@@ -62,10 +79,26 @@ class ProductViewSet(ViewSet):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def filter_products(self, request, *args, **kwargs):
+    def search_products(self, request):
+        query_params = request.query_params
+        product_name = query_params.get('name')
+        category_id = query_params.get('category_id')
+
+        products = Product.objects.filter(is_available=True)
+        if product_name is not None:
+            products = products.filter(name__icontains=product_name)
+
+        if category_id is not None:
+            products = products.filter(category_id=category_id)
+
+        serializer = ProductSerializer(products, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def best_seller_products(self, request, *args, **kwargs):
         pass
 
-    def search_products(self, request, *args, **kwargs):
+    def filter_products(self, request, *args, **kwargs):
         pass
 
 
@@ -73,7 +106,15 @@ class CommentViewSet(ViewSet):
     permission_classes = (IsAuthenticated,)
 
     def create_comment(self, request, *args, **kwargs):
-        pass
+        serializer = ProductCommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Comment added", status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list_comments(self, request, *args, **kwargs):
-        pass
+        comments = ProductComment.objects.filter(is_active=True)
+        serializer = ProductCommentSerializer(comments)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
