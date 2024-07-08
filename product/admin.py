@@ -25,7 +25,7 @@ class ProductSizeAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'gender', 'created_at', 'is_available')
+    list_display = ('id', 'name', 'gender', 'category', 'created_at', 'is_available')
     list_display_links = ('id', 'name')
 
 
