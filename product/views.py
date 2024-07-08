@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -27,54 +26,45 @@ class ProductViewSet(ViewSet):
 
         gender_id = request.GET.get('gender_id')
         if gender_id is not None:
-            products = products.filter(is_available=True, gender_id=gender_id)
+            products = products.filter(gender_id=gender_id)
 
         category_id = request.GET.get('category_id')
         if category_id is not None:
-            products = products.filter(category_id=category_id, is_available=True)
+            products = products.filter(category_id=category_id)
+
+        color = request.GET.get('color')
+        if color is not None:
+            products = products.filter(colors__name=color)
+
+        size = request.GET.get('size')
+        if size is not None:
+            products = products.filter(sizes__name=size)
+
+        min_price = request.GET.get('min_price')
+        if min_price is not None:
+            products = products.filter(price__gte=min_price)
+
+        max_price = request.GET.get('max_price')
+        if max_price is not None:
+            products = products.filter(price__lte=max_price)
 
         paginator = ProductPagination()
         paginated_products = paginator.paginate_queryset(products, request)
         serializer = ProductSerializer(paginated_products, many=True)
 
-        return Response(data=paginator.get_paginated_response(serializer.data), status=status.HTTP_200_OK)
+        return paginator.get_paginated_response(serializer.data)
 
     def retrieve_product(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
-
-        product = Product.objects.filter(id=pk, is_available=True).first()
-        if product is None:
-            return Response("Product not found", status=status.HTTP_404_NOT_FOUND)
-
-        serializer = ProductSerializer(product, many=False)
+        product = get_object_or_404(Product, id=pk, is_available=True)
+        serializer = ProductSerializer(product, many=False, context={'many': False})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def update_product(self, request, *args, **kwargs):
-        pk = kwargs.get('pk')
-
-        product = Product.objects.filter(id=pk, is_available=True).first()
-        if product is None:
-            return Response("Product not found", status=status.HTTP_404_NOT_FOUND)
-
-        partial = request.method == 'PATCH'
-
-        serializer = ProductSerializer(product, data=request.data, partial=partial)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def related_products(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
-
-        product = Product.objects.filter(id=pk, is_available=True).first()
-        if product is None:
-            return Response("Product not found", status=status.HTTP_404_NOT_FOUND)
-
-        related_products = Product.objects.filter(is_available=True,
-                                                  category_id=product.category_id).exclude(id=pk)
+        product = get_object_or_404(Product, id=pk, is_available=True)
+        related_products = Product.objects.filter(is_available=True, category_id=product.category_id).exclude(id=pk)
         serializer = ProductSerializer(related_products)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -98,15 +88,14 @@ class ProductViewSet(ViewSet):
     def best_seller_products(self, request, *args, **kwargs):
         pass
 
-    def filter_products(self, request, *args, **kwargs):
-        pass
+    # TODO: RANKED PRODUCTS (HOT)
 
 
 class CommentViewSet(ViewSet):
     permission_classes = (IsAuthenticated,)
 
     def create_comment(self, request, *args, **kwargs):
-        serializer = ProductCommentSerializer(data=request.data)
+        serializer = ProductCommentSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response("Comment added", status=status.HTTP_201_CREATED)
