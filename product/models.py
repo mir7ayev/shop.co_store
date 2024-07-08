@@ -25,7 +25,7 @@ class ProductColor(models.Model):
     name = models.CharField(max_length=120)
 
     def __str__(self):
-        return f"The color id is {self.id}, name is {self}"
+        return f"The color id is {self.id}, name is {self.name}"
 
 
 class ProductSize(models.Model):
@@ -38,7 +38,7 @@ class ProductSize(models.Model):
 class Product(BaseModel):
     name = models.CharField(max_length=120)
     gender = models.IntegerField(choices=GENDER_CHOICES, default=1)
-    category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    category = models.ForeignKey(ProductCategory, default=1, on_delete=models.CASCADE)
 
     image = models.ImageField(upload_to='products/')
     description = RichTextField()
@@ -68,4 +68,4 @@ class ProductComment(BaseModel):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"The comment id is {self.id}, name is {self.name}"
+        return f"The comment id is {self.id}, name is {self.product}"
