@@ -1,11 +1,9 @@
 from django.db import models
 from core.models import BaseModel
 from ckeditor.fields import RichTextField
-from django.contrib.auth import get_user_model
 
-User = get_user_model()
+# TODO: add quantity to product works with color
 
-# TODO: get user from other micro-service
 
 GENDER_CHOICES = (
     (1, "Men"),
@@ -39,8 +37,6 @@ class Product(BaseModel):
     name = models.CharField(max_length=120)
     gender = models.IntegerField(choices=GENDER_CHOICES, default=1)
     category = models.ForeignKey(ProductCategory, default=1, on_delete=models.CASCADE)
-
-    image = models.ImageField(upload_to='products/')
     description = RichTextField()
 
     price = models.FloatField()
@@ -60,12 +56,22 @@ class Product(BaseModel):
         return f"The product id is {self.id}, name is {self.name}"
 
 
-class ProductComment(BaseModel):
+class ProductImage(BaseModel):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='products/')
+    alt_text = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"The product id is {self.id}, name is {self.product}"
+
+
+class ProductReview(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.IntegerField()
+    rating = models.IntegerField()
     comment = models.TextField()
 
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"The comment id is {self.id}, name is {self.product}"
+        return f"Review by {self.author} on {self.product.name}"
