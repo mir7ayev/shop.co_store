@@ -35,10 +35,10 @@ class ProductViewSet(ViewSet):
     # permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
-        operation_description="Retrieve a list of products with optional filters",
+        operation_description="Retrieve a list of products with optional filters.",
         responses={
             200: openapi.Response(
-                description="List of products",
+                description="List of products.",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
@@ -103,10 +103,10 @@ class ProductViewSet(ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
-        operation_description="Retrieve a specific product and its related products",
+        operation_description="Retrieve a specific product and its related products.",
         responses={
             200: openapi.Response(
-                description="Product and related products retrieved successfully",
+                description="Product and related products retrieved successfully.",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
@@ -123,7 +123,7 @@ class ProductViewSet(ViewSet):
             openapi.Parameter(
                 'pk',
                 openapi.IN_PATH,
-                description="ID of the product",
+                description="ID of the product.",
                 type=openapi.TYPE_INTEGER,
                 required=True
             ),
@@ -154,17 +154,17 @@ class ReviewViewSet(ViewSet):
     permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
-        operation_description="Create a new product review",
+        operation_description="Create a new product review.",
         request_body=ProductReviewSerializer,
         responses={
-            201: "Review added",
-            400: "Bad Request",
+            201: openapi.Response(description="Review added successfully."),
+            400: openapi.Response(description="Bad Request.")
         },
         manual_parameters=[
             openapi.Parameter(
                 'Authorization',
                 openapi.IN_HEADER,
-                description="User's access token",
+                description="User's access token.",
                 type=openapi.TYPE_STRING,
                 required=True
             ),
@@ -183,22 +183,25 @@ class ReviewViewSet(ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        operation_description="Retrieve a list of active product reviews",
+        operation_description="Retrieve a list of active product reviews.",
         responses={
-            200: ProductReviewSerializer(many=True),
-            400: "Bad Request",
+            200: openapi.Response(
+                description="List of active product reviews.",
+                schema=ProductReviewSerializer(many=True)
+            ),
+            400: openapi.Response(description="Bad Request.")
         },
         manual_parameters=[
             openapi.Parameter(
                 'page',
                 openapi.IN_QUERY,
-                description="Page number",
+                description="Page number.",
                 type=openapi.TYPE_INTEGER
             ),
             openapi.Parameter(
                 'page_size',
                 openapi.IN_QUERY,
-                description="Number of reviews per page",
+                description="Number of reviews per page.",
                 type=openapi.TYPE_INTEGER
             ),
         ],
