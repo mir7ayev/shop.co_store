@@ -1,8 +1,13 @@
 from django.contrib import admin
 from .models import (
     ProductCategory, ProductColor, ProductSize, Product,
-    ProductComment,
+    ProductReview, ProductImage,
 )
+
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
 
 
 @admin.register(ProductCategory)
@@ -27,9 +32,16 @@ class ProductSizeAdmin(admin.ModelAdmin):
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'gender', 'category', 'created_at', 'is_available')
     list_display_links = ('id', 'name')
+    inlines = [ProductImageInline]
 
 
-@admin.register(ProductComment)
-class ProductCommentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'author', 'product', 'created_at', 'is_active')
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'product', 'image', 'alt_text')
+    list_display_links = ('id', 'product')
+
+
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin):
+    list_display = ('id', 'author', 'product', 'rating', 'created_at', 'is_active')
     list_display_links = ('id', 'author')
