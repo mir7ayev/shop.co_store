@@ -35,30 +35,35 @@ class ProductViewSet(ViewSet):
     # permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
-        operation_description="List products",
-        operation_summary="Get all products (by filter, search query) with pagination",
-        responses={200: ProductSerializer()},
+        operation_description="Retrieve a list of products with optional filters",
+        responses={
+            200: openapi.Response(
+                description="List of products",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'next': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_URI, nullable=True),
+                        'previous': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_URI, nullable=True),
+                        'results': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                  items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                                                       ref=ProductSerializer)),
+                    }
+                )
+            ),
+            400: "Bad Request",
+        },
         manual_parameters=[
-            openapi.Parameter('q', openapi.IN_QUERY, description='Query string',
-                              type=openapi.TYPE_STRING),
-            openapi.Parameter('gender_id', openapi.IN_QUERY, description='Filter by gender ID',
-                              type=openapi.TYPE_INTEGER),
-            openapi.Parameter('category_id', openapi.IN_QUERY, description='Filter by category ID',
-                              type=openapi.TYPE_INTEGER),
-            openapi.Parameter('color', openapi.IN_QUERY, description='Filter by color',
-                              type=openapi.TYPE_STRING),
-            openapi.Parameter('size', openapi.IN_QUERY, description='Filter by size',
-                              type=openapi.TYPE_STRING),
-            openapi.Parameter('min_price', openapi.IN_QUERY, description='Filter by minimum price',
-                              type=openapi.TYPE_NUMBER, format=openapi.FORMAT_FLOAT),
-            openapi.Parameter('max_price', openapi.IN_QUERY, description='Filter by maximum price',
-                              type=openapi.TYPE_NUMBER, format=openapi.FORMAT_FLOAT),
-            openapi.Parameter('page', openapi.IN_QUERY, description='Page number for pagination',
-                              type=openapi.TYPE_INTEGER),
-            openapi.Parameter('page_size', openapi.IN_QUERY, description='Number of results per page',
-                              type=openapi.TYPE_INTEGER)
+            openapi.Parameter('q', openapi.IN_QUERY, description="Search query", type=openapi.TYPE_STRING),
+            openapi.Parameter('gender_id', openapi.IN_QUERY, description="Gender ID", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('category_id', openapi.IN_QUERY, description="Category ID", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('color', openapi.IN_QUERY, description="Color name", type=openapi.TYPE_STRING),
+            openapi.Parameter('size', openapi.IN_QUERY, description="Size name", type=openapi.TYPE_STRING),
+            openapi.Parameter('min_price', openapi.IN_QUERY, description="Minimum price", type=openapi.TYPE_NUMBER,
+                              format=openapi.FORMAT_FLOAT),
+            openapi.Parameter('max_price', openapi.IN_QUERY, description="Maximum price", type=openapi.TYPE_NUMBER,
+                              format=openapi.FORMAT_FLOAT),
         ],
-        tags=['products']
     )
     def list_products(self, request, *args, **kwargs):
         products = Product.objects.filter(is_available=True).order_by('-created_at')
@@ -98,14 +103,31 @@ class ProductViewSet(ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
-        operation_description="Retrieve a product by ID and get related products in the same category",
-        operation_summary="Get product details and related products",
-        responses={200: ProductSerializer()},
+        operation_description="Retrieve a specific product and its related products",
+        responses={
+            200: openapi.Response(
+                description="Product and related products retrieved successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'product': openapi.Schema(type=openapi.TYPE_OBJECT, ref=ProductSerializer),
+                        'related_products': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                           items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                                                                ref=ProductSerializer)),
+                    }
+                )
+            ),
+            404: "Product not found",
+        },
         manual_parameters=[
-            openapi.Parameter('pk', openapi.IN_PATH, description='Primary key of the product',
-                              type=openapi.TYPE_INTEGER)
+            openapi.Parameter(
+                'pk',
+                openapi.IN_PATH,
+                description="ID of the product",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            ),
         ],
-        tags=['product']
     )
     def retrieve_product(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
@@ -132,29 +154,21 @@ class ReviewViewSet(ViewSet):
     permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
-        operation_description="Create a new review on a product",
-        operation_summary="Add a review",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'review': openapi.Schema(type=openapi.TYPE_STRING,
-                                         description='review text'),
-                'product_id': openapi.Schema(type=openapi.TYPE_INTEGER,
-                                             description='ID of the product being reviewed on'),
-            },
-            required=['review', 'product_id']
-        ),
+        operation_description="Create a new product review",
+        request_body=ProductReviewSerializer,
         responses={
-            201: openapi.Response(description="Review added"),
-            400: openapi.Response(description="Invalid data"),
-            401: openapi.Response(description="Unauthorized"),
-            500: openapi.Response(description="Internal server error")
+            201: "Review added",
+            400: "Bad Request",
         },
         manual_parameters=[
-            openapi.Parameter('Authorization', openapi.IN_HEADER, description="User's access token",
-                              type=openapi.TYPE_STRING, required=True)
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description="User's access token",
+                type=openapi.TYPE_STRING,
+                required=True
+            ),
         ],
-        tags=['reviews']
     )
     def create_review(self, request, *args, **kwargs):
         user_access_token = request.headers.get('Authorization')
@@ -169,10 +183,25 @@ class ReviewViewSet(ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        operation_description="List all active reviews",
-        operation_summary="Get all active reviews",
-        responses={200: ProductSerializer()},
-        tags=['reviews']
+        operation_description="Retrieve a list of active product reviews",
+        responses={
+            200: ProductReviewSerializer(many=True),
+            400: "Bad Request",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'page',
+                openapi.IN_QUERY,
+                description="Page number",
+                type=openapi.TYPE_INTEGER
+            ),
+            openapi.Parameter(
+                'page_size',
+                openapi.IN_QUERY,
+                description="Number of reviews per page",
+                type=openapi.TYPE_INTEGER
+            ),
+        ],
     )
     def list_reviews(self, request, *args, **kwargs):
         reviews = ProductReview.objects.filter(is_active=True).order_by('-created_at')
