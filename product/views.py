@@ -36,23 +36,7 @@ class ProductViewSet(ViewSet):
 
     @swagger_auto_schema(
         operation_description="Retrieve a list of products with optional filters.",
-        responses={
-            200: openapi.Response(
-                description="List of products.",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'count': openapi.Schema(type=openapi.TYPE_INTEGER),
-                        'next': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_URI, nullable=True),
-                        'previous': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_URI, nullable=True),
-                        'results': openapi.Schema(type=openapi.TYPE_ARRAY,
-                                                  items=openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                                       ref=ProductSerializer)),
-                    }
-                )
-            ),
-            400: "Bad Request",
-        },
+        responses={200: ProductSerializer()},
         manual_parameters=[
             openapi.Parameter('q', openapi.IN_QUERY, description="Search query", type=openapi.TYPE_STRING),
             openapi.Parameter('gender_id', openapi.IN_QUERY, description="Gender ID", type=openapi.TYPE_INTEGER),
@@ -110,10 +94,47 @@ class ProductViewSet(ViewSet):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        'product': openapi.Schema(type=openapi.TYPE_OBJECT, ref=ProductSerializer),
-                        'related_products': openapi.Schema(type=openapi.TYPE_ARRAY,
-                                                           items=openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                                                ref=ProductSerializer)),
+                        'product': openapi.Schema(
+                            type=openapi.TYPE_OBJECT, properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                'name': openapi.Schema(type=openapi.TYPE_STRING),
+                                'category': openapi.Schema(type=openapi.TYPE_STRING),
+                                'gender': openapi.Schema(type=openapi.TYPE_STRING),
+                                'images': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                         items=openapi.Schema(type=openapi.TYPE_OBJECT)),
+                                'description': openapi.Schema(type=openapi.TYPE_STRING),
+                                'price': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                'discount': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                'price_with_discount': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                'colors': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                         items=openapi.Schema(type=openapi.TYPE_OBJECT)),
+                                'sizes': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                        items=openapi.Schema(type=openapi.TYPE_OBJECT)),
+                                'comments': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                           items=openapi.Schema(type=openapi.TYPE_OBJECT)),
+                            }),
+                        'related_products': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'created_at': openapi.Schema(type=openapi.TYPE_STRING,
+                                                             format=openapi.FORMAT_DATETIME),
+                                'updated_at': openapi.Schema(type=openapi.TYPE_STRING,
+                                                             format=openapi.FORMAT_DATETIME),
+                                'name': openapi.Schema(type=openapi.TYPE_STRING),
+                                'category': openapi.Schema(type=openapi.TYPE_STRING),
+                                'gender': openapi.Schema(type=openapi.TYPE_STRING),
+                                'images': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                         items=openapi.Schema(
+                                                             type=openapi.TYPE_OBJECT)),
+                                'description': openapi.Schema(type=openapi.TYPE_STRING),
+                                'price': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                'discount': openapi.Schema(type=openapi.TYPE_NUMBER),
+                                'price_with_discount': openapi.Schema(
+                                    type=openapi.TYPE_NUMBER),
+                            })),
                     }
                 )
             ),
@@ -187,7 +208,16 @@ class ReviewViewSet(ViewSet):
         responses={
             200: openapi.Response(
                 description="List of active product reviews.",
-                schema=ProductReviewSerializer(many=True)
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+                        'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'review': openapi.Schema(type=openapi.TYPE_STRING),
+                        'rating': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'created_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                        # Add other fields here
+                    })
+                )
             ),
             400: openapi.Response(description="Bad Request.")
         },
