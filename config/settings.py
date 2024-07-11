@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     # System packages
     'rest_framework',
     'ckeditor',
+    'drf_yasg',
 
     # Local apps
     'core',
@@ -126,3 +127,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
 }
+
+AUTH_SECRET_KEY = "bac2bd9f-2c57-4901-b01e-7bf4e561c363"
