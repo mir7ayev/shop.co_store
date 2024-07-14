@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'ckeditor',
     'drf_yasg',
+    'corsheaders',
 
     # Local apps
     'core',
@@ -43,6 +44,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -126,4 +128,5 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
 }
 
+CORS_ALLOW_ALL_ORIGINS = True
 AUTH_SECRET_KEY = "bac2bd9f-2c57-4901-b01e-7bf4e561c363"
