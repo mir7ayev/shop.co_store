@@ -68,16 +68,10 @@ class ProductSerializer(ModelSerializer):
     def to_representation(self, instance):
         many = self.context.get('many', None)
         representation = super().to_representation(instance)
-
-        images = []
-        for pcq in instance.productcolorquantity_set.all():
-            images.extend(ProductImageSerializer(pcq.images.all(), many=True).data)
-
-        representation['images'] = images
+        representation['colors'] = ProductColorQuantitySerializer(instance.productcolorquantity_set.all(),
+                                                                  many=True).data
 
         if many is False:
-            representation['colors'] = ProductColorQuantitySerializer(instance.productcolorquantity_set.all(),
-                                                                      many=True).data
             representation['sizes'] = ProductSizeSerializer(instance.sizes.all(), many=True).data
             representation['comments'] = ProductCommentSerializer(instance.productcomment_set.all(), many=True).data
 
