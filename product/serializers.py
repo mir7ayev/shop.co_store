@@ -1,8 +1,9 @@
+from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from django.http import Http404
 from .models import (
-    Product, ProductReview, ProductColor, ProductSize,
-    ProductCategory, ProductImage,
+    Product, ProductComment, ProductColor, ProductSize,
+    ProductCategory, ProductImage, ProductColorQuantity,
 )
 
 
@@ -27,13 +28,27 @@ class ProductSizeSerializer(ModelSerializer):
 class ProductImageSerializer(ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ('id', 'image', 'alt_text')
+        fields = ('id', 'image')
 
 
-class ProductReviewSerializer(ModelSerializer):
+class ProductColorQuantitySerializer(ModelSerializer):
+    color_name = serializers.CharField(source='color.name', read_only=True)
+    images = ProductImageSerializer(many=True)
+
     class Meta:
-        model = ProductReview
-        fields = ('id', 'product', 'author', 'rating', 'comment', 'created_at')
+        model = ProductColorQuantity
+        fields = ('color', 'color_name', 'quantity', 'images')
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['images'] = [image.image.url for image in instance.images.all()]
+        return representation
+
+
+class ProductCommentSerializer(ModelSerializer):
+    class Meta:
+        model = ProductComment
+        fields = ('id', 'product', 'author', 'comment', 'created_at')
 
     def save(self, **kwargs):
         user_id = self.context.get('user_id', None)
@@ -47,17 +62,23 @@ class ProductReviewSerializer(ModelSerializer):
 class ProductSerializer(ModelSerializer):
     class Meta:
         model = Product
-        fields = ('id', 'created_at', 'updated_at', 'name', 'category', 'gender',
-                  'images', 'description', 'price', 'discount', 'price_with_discount')
+        fields = ('id', 'created_at', 'updated_at', 'name', 'category', 'gender', 'description',
+                  'price', 'discount', 'price_with_discount', 'is_available')
 
     def to_representation(self, instance):
         many = self.context.get('many', None)
         representation = super().to_representation(instance)
-        representation['images'] = ProductImageSerializer(instance.images.all(), many=True).data
+
+        images = []
+        for pcq in instance.productcolorquantity_set.all():
+            images.extend(ProductImageSerializer(pcq.images.all(), many=True).data)
+
+        representation['images'] = images
 
         if many is False:
-            representation['colors'] = ProductColorSerializer(instance.colors.all(), many=True).data
+            representation['colors'] = ProductColorQuantitySerializer(instance.productcolorquantity_set.all(),
+                                                                      many=True).data
             representation['sizes'] = ProductSizeSerializer(instance.sizes.all(), many=True).data
-            representation['comments'] = ProductReviewSerializer(instance.productreview_set.all(), many=True).data
+            representation['comments'] = ProductCommentSerializer(instance.productcomment_set.all(), many=True).data
 
         return representation

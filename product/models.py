@@ -1,9 +1,7 @@
 from django.db import models
 from core.models import BaseModel
 from ckeditor.fields import RichTextField
-
-# TODO: add quantity to product works with color
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 GENDER_CHOICES = (
     (1, "Men"),
@@ -16,21 +14,21 @@ class ProductCategory(models.Model):
     name = models.CharField(max_length=120, unique=True)
 
     def __str__(self):
-        return f"The category id is {self.id}, name is {self.name}"
+        return f"{self.name} (ID: {self.id})"
 
 
 class ProductColor(models.Model):
     name = models.CharField(max_length=120)
 
     def __str__(self):
-        return f"The color id is {self.id}, name is {self.name}"
+        return f"{self.name} (ID: {self.id})"
 
 
 class ProductSize(models.Model):
     name = models.CharField(max_length=120)
 
     def __str__(self):
-        return f"The size id is {self.id}, name is {self.name}"
+        return f"{self.name} (ID: {self.id})"
 
 
 class Product(BaseModel):
@@ -39,11 +37,11 @@ class Product(BaseModel):
     category = models.ForeignKey(ProductCategory, default=1, on_delete=models.CASCADE)
     description = RichTextField()
 
-    price = models.FloatField()
-    discount = models.IntegerField(default=0)
+    price = models.FloatField(validators=[MinValueValidator(0)])
+    discount = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     price_with_discount = models.FloatField(default=0, null=True, blank=True)
 
-    colors = models.ManyToManyField(ProductColor, blank=True)
+    colors = models.ManyToManyField(ProductColor, through='ProductColorQuantity', blank=True)
     sizes = models.ManyToManyField(ProductSize, blank=True)
 
     is_available = models.BooleanField(default=True)
@@ -53,25 +51,35 @@ class Product(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"The product id is {self.id}, name is {self.name}"
+        return f"{self.name} (ID: {self.id})"
 
 
-class ProductImage(BaseModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='products/')
-    alt_text = models.CharField(max_length=255, blank=True, null=True)
+class ProductColorQuantity(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    color = models.ForeignKey(ProductColor, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('product', 'color')
 
     def __str__(self):
-        return f"The product id is {self.id}, name is {self.product}"
+        return f"{self.product.name} - {self.color.name} (Quantity: {self.quantity})"
 
 
-class ProductReview(BaseModel):
+class ProductImage(models.Model):
+    product_color_quantity = models.ForeignKey(ProductColorQuantity, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='product_images/')
+
+    def __str__(self):
+        return f"Image of {self.product_color_quantity.product.name} ({self.product_color_quantity.color.name})"
+
+
+class ProductComment(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     author = models.IntegerField()
-    rating = models.IntegerField()
     comment = models.TextField()
 
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"Review by {self.author} on {self.product.name}"
+        return f"Comment for {self.product.name} by User {self.author}"
