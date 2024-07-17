@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from core.utils import get_user_data
-from .models import Product, ProductComment
+from .models import Product, ProductComment, ProductRating
 from .serializers import ProductSerializer, ProductCommentSerializer
 
 
@@ -151,6 +151,59 @@ class ProductViewSet(ViewSet):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description="Rate a product.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'product_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the product to rate'),
+                'rating': openapi.Schema(type=openapi.TYPE_INTEGER, description='Rating value (0-5)'),
+            },
+            required=['product_id', 'rating']
+        ),
+        responses={
+            200: openapi.Response(description="Product rated successfully"),
+            404: openapi.Response(description="Product not found or no rating provided"),
+            401: openapi.Response(description="Unauthorized access")
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description="User access token",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ]
+    )
+    def rate_product(self, request, *args, **kwargs):
+        user_access_token = request.headers.get('Authorization')
+        user_obj = get_user_data(user_access_token)
+        user_id = user_obj.json().get('id')
+
+        product_id = request.data.get('product_id')
+        if product_id is None:
+            return Response("No product found", status=status.HTTP_404_NOT_FOUND)
+
+        rating = request.data.get('rating')
+        if rating is None:
+            return Response("No rating found", status=status.HTTP_404_NOT_FOUND)
+
+        product_rating = ProductRating.objects.filter(product_id=product_id, user_id=user_id).first()
+        if product_rating is not None:
+            product_rating.rating = rating
+            product_rating.save(update_fields=['rating'])
+
+        product_rating = ProductRating.objects.create(product_id=product_id, user_id=user_id, rating=rating)
+        product_rating.save()
+
+        product = get_object_or_404(Product, product_id=product_id)
+        products_rating = ProductRating.objects.filter(product_id=product_id)
+        product.rating = sum(products_rating.rating) / len(products_rating.rating)
+        product.save(update_fields=['rating'])
+
+        return Response("Product rated successfully", status=status.HTTP_200_OK)
 
 
 class CommentViewSet(ViewSet):
