@@ -3,6 +3,7 @@ from django import forms
 from .models import (
     ProductCategory, ProductColor, ProductSize, Product,
     ProductColorQuantity, ProductImage, ProductComment,
+    ProductRating,
 )
 
 
@@ -46,6 +47,7 @@ class ProductColorQuantityInline(admin.TabularInline):
 class ProductCategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     list_display_links = ('id', 'name')
+    list_filter = ('id', 'name')
 
 
 # Admin for ProductColor with basic list display and filtering
@@ -53,6 +55,7 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 class ProductColorAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     list_display_links = ('id', 'name')
+    list_filter = ('id', 'name')
 
 
 # Admin for ProductSize with basic list display and filtering
@@ -103,6 +106,14 @@ class ProductImageAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'product_color_quantity')
     list_filter = ('id', 'product_color_quantity__product', 'product_color_quantity__color')
     search_fields = ('product_color_quantity__product__name', 'product_color_quantity__color__name')
+
+
+# Admin for ProductRating with advanced list display and filtering
+@admin.register(ProductRating)
+class ProductRating(admin.ModelAdmin):
+    list_display = ('id', 'product', 'user', 'rating')
+    list_display_links = ('id', 'product')
+    list_filter = ('id', 'product__name', 'user', 'rating')
 
 
 # Admin for ProductComment with advanced list display and filtering
