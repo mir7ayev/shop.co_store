@@ -10,9 +10,9 @@ from django.conf.urls.static import static
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Blog Analytics",
+        title="Shop.co Store",
         default_version='v1',
-        description="API documentation for Blog Analytics",
+        description="API documentation for Shop.co Store",
     ),
     permission_classes=[AllowAny, ],
     public=True,
