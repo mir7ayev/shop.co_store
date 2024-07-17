@@ -63,7 +63,7 @@ class ProductSerializer(ModelSerializer):
     class Meta:
         model = Product
         fields = ('id', 'created_at', 'updated_at', 'name', 'category', 'gender', 'description',
-                  'price', 'discount', 'price_with_discount', 'is_available')
+                  'price', 'discount', 'rating', 'price_with_discount', 'is_available')
 
     def to_representation(self, instance):
         many = self.context.get('many', None)
