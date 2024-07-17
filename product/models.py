@@ -43,6 +43,7 @@ class Product(BaseModel):
 
     colors = models.ManyToManyField(ProductColor, through='ProductColorQuantity', blank=True)
     sizes = models.ManyToManyField(ProductSize, blank=True)
+    rating = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(5)])
 
     is_available = models.BooleanField(default=True)
 
@@ -72,6 +73,15 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"Image of {self.product_color_quantity.product.name} ({self.product_color_quantity.color.name})"
+
+
+class ProductRating(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    user = models.IntegerField()
+    rating = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.rating}"
 
 
 class ProductComment(BaseModel):
