@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'corsheaders',
 
-    # Local apps
+    # Custom apps
     'core',
     'product',
     'order',
