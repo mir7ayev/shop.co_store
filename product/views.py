@@ -190,17 +190,18 @@ class ProductViewSet(ViewSet):
         if rating is None:
             return Response("No rating found", status=status.HTTP_404_NOT_FOUND)
 
-        product = ProductRating.objects.filter(product_id=product_id, user_id=user_id).first()
-        if product is not None:
-            product.rating = rating
-            product.save(update_fields=['rating'])
+        product_rating = ProductRating.objects.filter(product_id=product_id, user_id=user_id).first()
+        if product_rating is not None:
+            product_rating.rating = rating
+            product_rating.save(update_fields=['rating'])
 
-        product = ProductRating.objects.create(product_id=product_id, user_id=user_id, rating=rating)
-        product.save()
+        product_rating = ProductRating.objects.create(product_id=product_id, user_id=user_id, rating=rating)
+        product_rating.save()
 
         product = get_object_or_404(Product, product_id=product_id)
         products_rating = ProductRating.objects.filter(product_id=product_id)
         product.rating = sum(products_rating.rating) / len(products_rating.rating)
+        product.save(update_fields=['rating'])
 
         return Response("Product rated successfully", status=status.HTTP_200_OK)
 
