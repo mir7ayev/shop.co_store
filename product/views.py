@@ -1,14 +1,14 @@
-import requests
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
 from django.shortcuts import get_object_or_404
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 from core.utils import get_user_data
 from .models import Product, ProductComment, ProductRating
 from .serializers import ProductSerializer, ProductCommentSerializer
@@ -39,6 +39,7 @@ class ProductViewSet(ViewSet):
                               type=openapi.TYPE_INTEGER),
         ],
     )
+    @action(detail=False, methods=['get'])
     def list_products(self, request, *args, **kwargs):
         products = Product.objects.filter(is_available=True).order_by('-created_at')
 
@@ -137,6 +138,7 @@ class ProductViewSet(ViewSet):
             ),
         ],
     )
+    @action(detail=True, methods=['get'])
     def retrieve_product(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
         product = get_object_or_404(Product, id=pk, is_available=True)
@@ -177,6 +179,7 @@ class ProductViewSet(ViewSet):
             )
         ]
     )
+    @action(detail=True, methods=['post'])
     def rate_product(self, request, *args, **kwargs):
         user_access_token = request.headers.get('Authorization')
         user_obj = get_user_data(user_access_token)
@@ -226,6 +229,7 @@ class CommentViewSet(ViewSet):
             )
         ]
     )
+    @action(detail=True, methods=['post'])
     def create_comment(self, request, *args, **kwargs):
         user_access_token = request.headers.get('Authorization')
         user_obj = get_user_data(user_access_token)
@@ -242,6 +246,7 @@ class CommentViewSet(ViewSet):
         operation_description="Retrieve a list of active comments.",
         responses={200: ProductCommentSerializer(many=True)},
     )
+    @action(detail=False, methods=['get'])
     def list_comments(self, request, *args, **kwargs):
         comments = ProductComment.objects.filter(is_active=True).order_by('-created_at')
         serializer = ProductCommentSerializer(comments, many=True)
