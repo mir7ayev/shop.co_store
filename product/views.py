@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.viewsets import ViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
 from django.shortcuts import get_object_or_404
-from core.utils import get_user_data
+from core.utils import get_user_data, check_service_access_token
 from .models import Product, ProductComment, ProductRating
 from .serializers import ProductSerializer, ProductCommentSerializer
 
@@ -38,10 +38,11 @@ class ProductViewSet(ViewSet):
             openapi.Parameter('page_size', openapi.IN_QUERY, description="Number of items per page",
                               type=openapi.TYPE_INTEGER),
         ],
+        tags=['Products']
     )
     @action(detail=False, methods=['get'])
     def list_products(self, request, *args, **kwargs):
-        products = Product.objects.filter(is_available=True).order_by('-created_at')
+        products = Product.objects.filter(is_available=True)
 
         filters = {
             'query': request.query_params.get('q'),
@@ -137,6 +138,7 @@ class ProductViewSet(ViewSet):
                 required=True
             ),
         ],
+        tags=['Products']
     )
     @action(detail=True, methods=['get'])
     def retrieve_product(self, request, *args, **kwargs):
@@ -177,7 +179,8 @@ class ProductViewSet(ViewSet):
                 type=openapi.TYPE_STRING,
                 required=True
             )
-        ]
+        ],
+        tags=['Products']
     )
     @action(detail=True, methods=['post'])
     def rate_product(self, request, *args, **kwargs):
@@ -227,7 +230,8 @@ class CommentViewSet(ViewSet):
                 type=openapi.TYPE_STRING,
                 required=True
             )
-        ]
+        ],
+        tags=['Comments']
     )
     @action(detail=True, methods=['post'])
     def create_comment(self, request, *args, **kwargs):
@@ -245,9 +249,41 @@ class CommentViewSet(ViewSet):
     @swagger_auto_schema(
         operation_description="Retrieve a list of active comments.",
         responses={200: ProductCommentSerializer(many=True)},
+        tags=['Comments']
     )
     @action(detail=False, methods=['get'])
     def list_comments(self, request, *args, **kwargs):
         comments = ProductComment.objects.filter(is_active=True).order_by('-created_at')
         serializer = ProductCommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MicroServiceViewSet(viewsets.ModelViewSet):
+    # permission_classes = (IsAuthenticated,)
+
+    @swagger_auto_schema(
+        operation_description="Get products for the microservice.",
+        manual_parameters=[
+            openapi.Parameter('service_access_token', openapi.IN_QUERY, description='Token for validation',
+                              type=openapi.TYPE_STRING)
+        ],
+        responses={
+            200: openapi.Response(description="Products retrieved", schema=ProductSerializer(many=True)),
+            401: openapi.Response(description="Invalid token"),
+            404: openapi.Response(description="Token not provided")
+        },
+        tags=['Micro Service']
+    )
+    @action(detail=True, methods=['get'])
+    def get_products(self, request):
+        service_access_token = request.data.get('service_access_token')
+        if service_access_token is None:
+            return Response("No service access token provided", status=status.HTTP_404_NOT_FOUND)
+
+        token_status = check_service_access_token(service_access_token)
+        if token_status is not True:
+            return Response("Invalid service access token", status=status.HTTP_401_UNAUTHORIZED)
+
+        products = Product.objects.filter(is_available=True)
+        serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
