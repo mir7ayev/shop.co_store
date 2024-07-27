@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    ProductViewSet, CommentViewSet,
+    ProductViewSet, CommentViewSet, MicroServiceViewSet,
 )
 
 urlpatterns = [
@@ -13,5 +13,8 @@ urlpatterns = [
     # Comments
     path('comments/', CommentViewSet.as_view({'get': 'list_comments'})),
     path('comment/', CommentViewSet.as_view({'post': 'create_comment'})),
+
+    # Micro Service
+    path('get-products/', MicroServiceViewSet.as_view({'get': 'get_products'})),
 
 ]
