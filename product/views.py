@@ -171,22 +171,13 @@ class ProductViewSet(ViewSet):
             404: openapi.Response(description="Product not found or no rating provided"),
             401: openapi.Response(description="Unauthorized access")
         },
-        manual_parameters=[
-            openapi.Parameter(
-                'Authorization',
-                openapi.IN_HEADER,
-                description="User access token",
-                type=openapi.TYPE_STRING,
-                required=True
-            )
-        ],
         tags=['Products']
     )
     @action(detail=True, methods=['post'])
     def rate_product(self, request, *args, **kwargs):
         user_access_token = request.headers.get('Authorization')
         user_obj = get_user_data(user_access_token)
-        user_id = user_obj.json().get('id')
+        user_id = user_obj.get('id')
 
         product_id = request.data.get('product_id')
         if product_id is None:
